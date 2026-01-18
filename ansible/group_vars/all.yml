@@ -1,0 +1,15 @@
+k3s_version: "v1.29.7+k3s1"
+
+# Endpoint used by control-planes (cp-2/cp-3) and all workers to join.
+# Use a stable value: control-plane LB or cp-1 IP.
+k3s_api_endpoint: "CHANGE_ME_API_ENDPOINT"
+
+# Shared secret for all nodes (must be the same everywhere).
+k3s_token: "CHANGE_ME_CLUSTER_TOKEN"
+
+# Optional TLS SAN for the API endpoint (empty string allowed).
+k3s_tls_san_arg: "--tls-san CHANGE_ME_TLS_SAN"
+
+# Base hardening toggles for base.yml
+ssh_hardening: false
+configure_ufw: false

@@ -1,0 +1,68 @@
+---
+- name: Base OS preparation
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - curl
+          - ca-certificates
+          - open-iscsi
+          - nfs-common
+          - chrony
+        state: present
+
+    - name: Disable swap immediately
+      ansible.builtin.command: swapoff -a
+      changed_when: false
+
+    - name: Remove swap from fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: "^[^#].*\\sswap\\s"
+        state: absent
+
+    - name: Set sysctl for Kubernetes networking
+      ansible.builtin.sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        state: present
+        sysctl_set: true
+        reload: true
+      loop:
+        - { name: "net.bridge.bridge-nf-call-iptables", value: "1" }
+        - { name: "net.bridge.bridge-nf-call-ip6tables", value: "1" }
+        - { name: "net.ipv4.ip_forward", value: "1" }
+
+    - name: Optional SSH hardening
+      ansible.builtin.blockinfile:
+        path: /etc/ssh/sshd_config
+        marker: "# {mark} ANSIBLE_HARDENING"
+        block: |
+          PermitRootLogin no
+          PasswordAuthentication no
+      when: ssh_hardening | bool
+      notify: Restart ssh
+
+    - name: Optional UFW base rules
+      ansible.builtin.ufw:
+        rule: allow
+        name: OpenSSH
+      when: configure_ufw | bool
+
+    - name: Enable UFW
+      ansible.builtin.ufw:
+        state: enabled
+      when: configure_ufw | bool
+
+  handlers:
+    - name: Restart ssh
+      ansible.builtin.service:
+        name: ssh
+        state: restarted

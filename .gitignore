@@ -1,0 +1,33 @@
+# Node / VuePress
+node_modules/
+docs/node_modules/
+docs/cache/
+docs/temp/
+docs/.vuepress/
+docs/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Python / Ansible
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.retry
+
+# Misc
+.env
+.env.*
