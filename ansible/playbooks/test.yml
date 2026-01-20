@@ -1,0 +1,39 @@
+---
+- name: Test connectivity and collect host info
+  hosts: all
+  gather_facts: true
+  become: false
+  vars:
+    public_ip_service: "https://api.ipify.org"
+    wg_interface: "wg0"
+  tasks:
+    - name: Fetch public IPv4
+      ansible.builtin.uri:
+        url: "{{ public_ip_service }}?format=json"
+        return_content: true
+        timeout: 10
+      register: public_ip_result
+      failed_when: false
+
+    - name: Read WireGuard interface IPv4
+      ansible.builtin.command: "ip -o -4 addr show {{ wg_interface }}"
+      register: wg_ip_result
+      changed_when: false
+      failed_when: false
+
+    - name: Parse WireGuard IPv4
+      ansible.builtin.set_fact:
+        wg_ip: "{{ wg_ip_result.stdout | regex_search('inet\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)', '\\1') | default('') }}"
+
+    - name: Show host configuration summary
+      ansible.builtin.debug:
+        msg:
+          host: "{{ inventory_hostname }}"
+          ansible_host: "{{ ansible_host | default('') }}"
+          ansible_user: "{{ ansible_user | default('') }}"
+          groups: "{{ group_names | default([]) }}"
+          os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+          kernel: "{{ ansible_kernel }}"
+          primary_ipv4: "{{ ansible_default_ipv4.address | default('') }}"
+          public_ipv4: "{{ public_ip_result.json.ip | default(public_ip_result.content | default('')) }}"
+          wireguard_ipv4: "{{ wg_ip | default('') }}"
